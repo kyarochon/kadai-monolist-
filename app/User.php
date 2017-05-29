@@ -43,40 +43,38 @@ class User extends Model implements AuthenticatableContract,
         return $this->belongsToMany(Item::class)->withPivot('type')->withTimestamps();
     }
 
+
+    //
+    // Want関連
+    //
+    
+    // wantアイテムリストを取得
     public function want_items()
     {
         return $this->items()->where('type', 'want');
     }
-
+    // wantに追加
     public function want($itemId)
     {
-        // 既に Want しているかの確認
         $exist = $this->is_wanting($itemId);
-
         if ($exist) {
-            // 既に Want していれば何もしない
             return false;
         } else {
-            // 未 Want であれば Want する
             $this->items()->attach($itemId, ['type' => 'want']);
             return true;
         }
     }
-
+    // wantから除外
     public function dont_want($itemId)
     {
-        // 既に Want しているかの確認
         $exist = $this->is_wanting($itemId);
-
         if ($exist) {
-            // 既に Want していれば Want を外す
             \DB::delete("DELETE FROM item_user WHERE user_id = ? AND item_id = ? AND type = 'want'", [\Auth::user()->id, $itemId]);
         } else {
-            // 未 Want であれば何もしない
             return false;
         }
     }
-
+    // want状態かどうか
     public function is_wanting($itemIdOrCode)
     {
         if (is_numeric($itemIdOrCode)) {
@@ -88,4 +86,47 @@ class User extends Model implements AuthenticatableContract,
         }
     }
     
+
+    //
+    // Have関連
+    //
+    
+    // haveアイテムリストを取得
+    public function have_items()
+    {
+        return $this->items()->where('type', 'have');
+    }
+    // haveに追加
+    public function have($itemId)
+    {
+        $exist = $this->is_having($itemId);
+        if ($exist) {
+            return false;
+        } else {
+            $this->items()->attach($itemId, ['type' => 'have']);
+            return true;
+        }
+    }
+    // haveから除外
+    public function dont_have($itemId)
+    {
+        $exist = $this->is_having($itemId);
+        if ($exist) {
+            \DB::delete("DELETE FROM item_user WHERE user_id = ? AND item_id = ? AND type = 'have'", [\Auth::user()->id, $itemId]);
+        } else {
+            return false;
+        }
+    }
+    // have状態かどうか
+    public function is_having($itemIdOrCode)
+    {
+        if (is_numeric($itemIdOrCode)) {
+            $item_id_exists = $this->have_items()->where('item_id', $itemIdOrCode)->exists();
+            return $item_id_exists;
+        } else {
+            $item_code_exists = $this->have_items()->where('code', $itemIdOrCode)->exists();
+            return $item_code_exists;
+        }
+    }
+
 }
